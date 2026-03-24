@@ -1,4 +1,4 @@
-from tkinter import ttk, Label, Frame, StringVar
+from tkinter import ttk, Label, Frame, StringVar, Listbox, Scrollbar, END
 from ttkthemes import ThemedTk
 
 # Button Press
@@ -13,12 +13,20 @@ def calculate():
     try:
         result = str(eval(eq_text))
         eq_label.set(result)
+
+        # Add to history
+        history_list.append(eq_text + " = " + result)
+        history_box.insert(END, eq_text + " = " + result)
+
         eq_text = result
     except SyntaxError:
         eq_label.set("Syntax Error")
         eq_text = ""
     except ZeroDivisionError:
         eq_label.set("Arithmetic Error")
+        eq_text = ""
+    except Exception:
+        eq_label.set("Error")
         eq_text = ""
 
 # Clear the output
@@ -27,20 +35,49 @@ def clear_func():
     eq_label.set("")
     eq_text = ""
 
+# Load from history on click
+def load_history(event):
+    global eq_text
+    selection = history_box.curselection()
+    if selection:
+        value = history_box.get(selection[0])
+        eq_text = value.split(" = ")[-1]
+        eq_label.set(eq_text)
+
 # Main Window
 window = ThemedTk(theme="yaru")
 window.title("Basic Calculator")
-window.geometry("480x400")
+window.geometry("600x400")
 
 eq_text = ""
 eq_label = StringVar()
+
+# History storage
+history_list = []
 
 label = Label(window, textvariable=eq_label, font=('Times New Roman', 20),
               bg="#FFFFFF", width=20, height=1)
 label.pack()
 
-frame = Frame(window)
-frame.pack(pady=8)
+main_frame = Frame(window)
+main_frame.pack()
+
+frame = Frame(main_frame)
+frame.grid(row=0, column=0, padx=10)
+
+# History Panel
+history_frame = Frame(main_frame)
+history_frame.grid(row=0, column=1)
+
+scrollbar = Scrollbar(history_frame)
+scrollbar.pack(side="right", fill="y")
+
+history_box = Listbox(history_frame, height=15, width=25, yscrollcommand=scrollbar.set)
+history_box.pack()
+
+scrollbar.config(command=history_box.yview)
+
+history_box.bind("<<ListboxSelect>>", load_history)
 
 # Specific Style for '=' button
 button_height = 24
@@ -49,9 +86,6 @@ style = ttk.Style()
 style.configure("TButtonCustom.TButton", padding=[3, button_height])
 
 # Specific Style for '0' button
-button_height = 24
-
-style = ttk.Style()
 style.configure("TButtonCustom2.TButton", padding=[28, 4])
 
 
